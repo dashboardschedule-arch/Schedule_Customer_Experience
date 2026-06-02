@@ -88,10 +88,9 @@
     <div class="cal" id="cal"></div>
   </div>
   <div class="card">
-    <h2>Siapa Shift Bareng Saya</h2>
-    <div class="hint">Hanya menampilkan rekan satu role (<span id="roleName"></span>).</div>
-    <div class="daysel"><label>Tanggal: </label><select id="daysel" onchange="renderTeam()"></select></div>
-    <div class="team" id="team"></div>
+    <h2>On-Duty per Hari (semua role)</h2>
+    <div class="daysel"><label>Tanggal: </label><select id="odDate" onchange="renderOnDuty()"></select></div>
+    <div id="onduty"></div>
   </div>
 </div>
 
@@ -2474,8 +2473,10 @@ function fillList(filterTxt){
 function filterList(){ fillList(document.getElementById('search').value); }
 fillList("");
 
-var ds=document.getElementById('daysel');
-for(var d=1; d<=DATA.nDays; d++){ var op=document.createElement('option'); op.value=d; op.textContent=d+" "+MON_ID[DATA.month].slice(0,3)+" ("+DAY_ID[wd(d)].slice(0,3)+")"; ds.appendChild(op); }
+var od=document.getElementById('odDate');
+for(var d2=1; d2<=DATA.nDays; d2++){ var op2=document.createElement('option'); op2.value=d2; op2.textContent=d2+" "+MON_ID[DATA.month].slice(0,3)+" ("+DAY_ID[wd(d2)].slice(0,3)+")"; od.appendChild(op2); }
+od.value=(todayIndexInMonth()>0?todayIndexInMonth():1);
+renderOnDuty();
 
 function todayIndexInMonth(){ var n=new Date(); if(n.getFullYear()===DATA.year&&n.getMonth()===DATA.month) return n.getDate(); return 0; }
 
@@ -2491,7 +2492,6 @@ function render(){
   document.getElementById('idMitra').textContent=person.mitraId||"-";
   document.getElementById('idVendor').textContent=person.vendor||"-";
   document.getElementById('rolePill').textContent=person.role+(person.tier&&person.tier!=="SL"?" - "+person.tier:"");
-  document.getElementById('roleName').textContent=person.role;
 
   var tIdx=todayIndexInMonth();
   function box(when,dayNum){
@@ -2518,9 +2518,6 @@ function render(){
   for(var d3=1; d3<=DATA.nDays; d3++){ var ii=info(row[d3-1]); var hl=(tIdx===d3)?'box-shadow:0 0 0 2px #1A237E inset;':'';
     cal+='<div class="cell" style="background:'+ii.color+';'+hl+'"><div class="d">'+d3+'</div><div class="s">'+ii.label+'</div></div>'; }
   document.getElementById('cal').innerHTML=cal;
-
-  document.getElementById('daysel').value=(tIdx>0?tIdx:1);
-  renderTeam();
 }
 function renderWeek(row, refDay){
   var refWd=wd(refDay);                 // 0=Sen..6=Min
@@ -2538,19 +2535,25 @@ function renderWeek(row, refDay){
   }
   document.getElementById('weekRow').innerHTML=html;
 }
-function renderTeam(){
-  var idx=+document.getElementById('who').value;
-  var day=+document.getElementById('daysel').value; if(!day||day<1) day=1;
-  var myRole=DATA.people[idx].role; var myShift=DATA.sched[idx][day-1];
-  var groups={};
-  for(var i=0;i<DATA.people.length;i++){ if(DATA.people[i].role!==myRole) continue; var k=DATA.sched[i][day-1]; if(!groups[k])groups[k]=[]; groups[k].push(i); }
-  var ordr=["P","Mid","S","M","Off"]; var html="";
-  for(var s=0;s<ordr.length;s++){ var kk=ordr[s]; var arr=groups[kk]||[]; if(!arr.length) continue; var ii=info(kk);
-    var ppl=arr.map(function(i){ var nm=DATA.people[i].name; var tg=(DATA.people[i].tier&&DATA.people[i].tier!=="SL")?'<span class="badge">'+DATA.people[i].tier+'</span>':''; return (i===idx?'<span class="me">'+nm+'</span>':nm)+tg; }).join(", ");
-    var mine=(kk===myShift)?' (shift Anda)':'';
-    html+='<div class="teamgrp" style="background:'+ii.color+'"><div class="t">'+ii.label+mine+' - '+arr.length+' orang</div><div class="ppl">'+ppl+'</div></div>'; }
-  document.getElementById('team').innerHTML=html;
+function renderOnDuty(){
+  var day=+document.getElementById('odDate').value; if(!day||day<1) day=1;
+  var roles=["Shiftlead","HCU","CCU"];
+  var shiftOrder=["P","Mid","S","M","Off"];
+  var html="";
+  for(var ri=0;ri<roles.length;ri++){
+    var role=roles[ri];
+    // group this role's people by shift on this day
+    var grp={}; var total=0;
+    for(var i=0;i<DATA.people.length;i++){ if(DATA.people[i].role!==role) continue; var k=DATA.sched[i][day-1]; if(!grp[k])grp[k]=[]; grp[k].push(i); total++; }
+    if(total===0) continue;
+    html+='<div style="margin:8px 0 4px;font-weight:800;color:#1A237E;font-size:13px;">'+role+'</div>';
+    for(var s=0;s<shiftOrder.length;s++){ var kk=shiftOrder[s]; var arr=grp[kk]||[]; if(!arr.length) continue; var ii=info(kk);
+      var ppl=arr.map(function(i){ var nm=DATA.people[i].name; var tg=(DATA.people[i].tier&&DATA.people[i].tier!=="SL")?'<span class="badge">'+DATA.people[i].tier+'</span>':''; return nm+tg; }).join(", ");
+      html+='<div class="teamgrp" style="background:'+ii.color+';margin-top:4px;"><div class="t">'+ii.label+' - '+arr.length+' orang</div><div class="ppl">'+ppl+'</div></div>'; }
+  }
+  document.getElementById('onduty').innerHTML=html;
 }
 </script>
 </body>
 </html>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
