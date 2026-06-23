@@ -13,7 +13,6 @@
   .pick{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;}
   .ctrl{display:flex;flex-direction:column;gap:4px;}
   .ctrl.grow{flex:1;min-width:200px;}
-  .ctrl .row2{display:flex;gap:8px;}
   input[type=text]{padding:9px 12px;border:1px solid #cfd2dc;border-radius:8px;font-size:15px;flex:1;min-width:120px;}
   select{padding:9px 12px;border:1px solid #cfd2dc;border-radius:8px;font-size:15px;background:#fff;}
   label{font-size:11px;font-weight:700;color:#444;text-transform:uppercase;letter-spacing:.4px;}
@@ -113,7 +112,16 @@
 
 <div class="card">
   <h2>On-Duty per Hari <span class="hint" id="odRoleLbl"></span></h2>
-  <div class="daysel"><label style="text-transform:none;font-size:12px;">Tanggal: </label><select id="odDate" onchange="renderOnDuty()"></select></div>
+  <div class="daysel" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <label style="text-transform:none;font-size:12px;">Tanggal: </label>
+    <select id="odDate" onchange="renderOnDuty()"></select>
+    <label style="text-transform:none;font-size:12px;margin-left:6px;">Shift: </label>
+    <select id="odShift" onchange="renderOnDuty()">
+      <option value="">Semua shift</option>
+      <option value="P">Pagi</option><option value="Mid">Middle</option>
+      <option value="S">Siang</option><option value="M">Malam</option><option value="Off">Off Day</option>
+    </select>
+  </div>
   <div id="onduty"></div>
 </div>
 
@@ -151,10 +159,10 @@ function drawLegend(){ var keys=["P","Mid","S","M","Off"],h="";
 function periodText(){ document.getElementById('period').textContent="Periode: "+MONTHS[mkey].label+"  -  "+DATA.people.length+" MP"+(roleFilter?("  -  filter: "+ROLE_LABEL[roleFilter]):"  (HCU+CCU+Shiftlead+New Joiner)"); }
 
 function buildNameList(){
-  var who=document.getElementById('who'); var ft=""; var cur=who.value;
+  var who=document.getElementById('who'); var cur=who.value;
   who.innerHTML='<option value="">-- pilih nama --</option>';
   DATA.people.map(function(p,i){return {name:p.name,role:p.role,i:i};})
-   .filter(function(x){ return (!roleFilter||x.role===roleFilter) && (!ft||x.name.toLowerCase().indexOf(ft)>=0); })
+   .filter(function(x){ return (!roleFilter||x.role===roleFilter); })
    .sort(function(a,b){return a.name.localeCompare(b.name);})
    .forEach(function(x){ var o=document.createElement('option'); o.value=x.i; o.textContent=x.name+"  ("+x.role+")"; who.appendChild(o); });
   if(cur!==""&&DATA.people[cur]&&(!roleFilter||DATA.people[cur].role===roleFilter)) who.value=cur; else who.value="";
@@ -237,17 +245,20 @@ function renderGrid(){
 }
 function renderOnDuty(){
   var day=+document.getElementById('odDate').value; if(!day||day<1) day=1;
-  document.getElementById('odRoleLbl').textContent=roleFilter?("— "+ROLE_LABEL[roleFilter]):"(semua role)";
+  var sf=document.getElementById('odShift').value;
+  document.getElementById('odRoleLbl').textContent=(roleFilter?("— "+ROLE_LABEL[roleFilter]):"(semua role)")+(sf?(" · "+info(sf).label):"");
   var roles=roleFilter?[roleFilter]:ROLES;
-  var shiftOrder=["P","Mid","S","M","Off"]; var html="";
-  for(var ri=0;ri<roles.length;ri++){ var role=roles[ri]; var grp={}; var total=0;
-    for(var i=0;i<DATA.people.length;i++){ if(DATA.people[i].role!==role) continue; var k=DATA.sched[i][day-1]; if(!grp[k])grp[k]=[]; grp[k].push(i); total++; }
-    if(total===0) continue;
-    html+='<div style="margin:8px 0 4px;font-weight:800;color:#1A237E;font-size:13px;">'+ROLE_LABEL[role]+'</div>';
-    for(var s=0;s<shiftOrder.length;s++){ var kk=shiftOrder[s]; var arr=grp[kk]||[]; if(!arr.length) continue; var ii=info(kk);
+  var shiftOrder=["P","Mid","S","M","Off"]; var html=""; var grand=0;
+  for(var ri=0;ri<roles.length;ri++){ var role=roles[ri]; var grp={};
+    for(var i=0;i<DATA.people.length;i++){ if(DATA.people[i].role!==role) continue; var k=DATA.sched[i][day-1]; if(!grp[k])grp[k]=[]; grp[k].push(i); }
+    var rh="";
+    for(var s=0;s<shiftOrder.length;s++){ var kk=shiftOrder[s]; if(sf&&kk!==sf) continue; var arr=grp[kk]||[]; if(!arr.length) continue; var ii=info(kk); grand+=arr.length;
       var ppl=arr.map(function(i){ var nm=DATA.people[i].name; var tg=(DATA.people[i].tier&&DATA.people[i].tier!=="SL")?'<span class="badge">'+DATA.people[i].tier+'</span>':''; return nm+tg; }).join(", ");
-      html+='<div class="teamgrp" style="background:'+ii.color+';"><div class="t">'+ii.label+' - '+arr.length+' orang</div><div class="ppl">'+ppl+'</div></div>'; }
+      rh+='<div class="teamgrp" style="background:'+ii.color+';"><div class="t">'+ii.label+' - '+arr.length+' orang</div><div class="ppl">'+ppl+'</div></div>'; }
+    if(rh) html+='<div style="margin:8px 0 4px;font-weight:800;color:#1A237E;font-size:13px;">'+ROLE_LABEL[role]+'</div>'+rh;
   }
+  if(sf) html='<div class="hint" style="margin-bottom:6px;">Total shift '+info(sf).label+' (tgl '+day+'): <b>'+grand+' orang</b></div>'+html;
+  if(!html) html='<div class="hint">Tidak ada yang '+(sf?('masuk shift '+info(sf).label):'bertugas')+' di tanggal ini.</div>';
   document.getElementById('onduty').innerHTML=html;
 }
 
