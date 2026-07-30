@@ -46,11 +46,11 @@
   .idtbl td.v{font-weight:700;color:#1a1a2e;}
   .badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:8px;background:#e8eaf6;color:#1A237E;margin-left:4px;font-weight:700;}
   .gridwrap{overflow-x:auto;border:1px solid #eee;border-radius:8px;}
-  table.grid{border-collapse:collapse;font-size:10px;width:100%;}
-  .grid th,.grid td{border:1px solid #e6e6ee;padding:3px 2px;text-align:center;white-space:nowrap;}
+  table.grid{border-collapse:collapse;font-size:10px;table-layout:fixed;}
+  .grid th,.grid td{border:1px solid #e6e6ee;padding:3px 0;text-align:center;white-space:nowrap;width:32px;overflow:hidden;text-overflow:ellipsis;}
   .grid th{background:#1A237E;color:#fff;font-size:10px;position:sticky;top:0;}
   .grid th.wknd{background:#3949AB;}
-  .grid td.nm,.grid th.nm{position:sticky;left:0;background:#fff;text-align:left;min-width:160px;max-width:180px;overflow:hidden;text-overflow:ellipsis;font-weight:700;z-index:2;}
+  .grid td.nm,.grid th.nm{position:sticky;left:0;background:#fff;text-align:left;width:170px;min-width:170px;max-width:170px;overflow:hidden;text-overflow:ellipsis;font-weight:700;z-index:2;padding-left:6px;}
   .grid th.nm{background:#1A237E;color:#fff;z-index:3;}
   .grid td.cellg{font-weight:700;color:#1a1a2e;}
   .grid td.tcol{box-shadow:0 0 0 2px #1A237E inset;}
@@ -255,7 +255,7 @@ function renderGrid(){
   h+="</tr></thead><tbody>";
   ppl.forEach(function(x){
     h+="<tr><td class='nm' title='"+x.p.name+"'>"+x.p.name+"</td><td class='tier'>"+(x.p.tier||"")+"</td>";
-    for(var d=0; d<DATA.nDays; d++){ var k=DATA.sched[x.i][d]; var ii=info(k); var lab=(k==="Off"?"–":k);
+    for(var d=0; d<DATA.nDays; d++){ var k=DATA.sched[x.i][d]; var ii=info(k); var lab=(k==="Off"?"–":(k==="Resign"?"R":k));
       var tc=(tIdx===d+1)?" tcol":"";
       h+="<td class='cellg"+tc+"' style='background:"+ii.color+"'>"+lab+"</td>"; }
     h+="</tr>";
